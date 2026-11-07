@@ -1,6 +1,6 @@
 """Local narration with Kokoro: one wav per sentence, joined with short gaps.
 
-usage: .venv/Scripts/python scripts/tts.py <SCRIPT.md> <out_dir> [--voice am_michael] [--speed 1.1] [--gap 0.06]
+usage: .venv/bin/python scripts/tts.py <SCRIPT.md> <out_dir> [--voice am_michael] [--speed 1.1] [--gap 0.06]
 Reads the lines under the "## Voice-over" heading of SCRIPT.md.
 Writes voice.wav and lines.json (start/end of every line, used to time the shots).
 Model files are expected in models/kokoro/.

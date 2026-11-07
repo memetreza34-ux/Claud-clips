@@ -5,7 +5,7 @@ Vertical animated story shorts: 2D characters in a colourful 3D world, rendered 
 Built on the MIT-licensed [claude-animated-shorts](https://github.com/mromidev/claude-animated-shorts), linked as a submodule in `vendor/`.
 
 ## Set up on a Mac
-Needs Node, Python 3, ffmpeg and Google Chrome (`brew install node python ffmpeg`).
+Needs Node, Python 3.10 to 3.13, ffmpeg, whisper.cpp and Google Chrome (`brew install node python@3.12 ffmpeg whisper-cpp`).
 
 ```bash
 git clone --recurse-submodules https://github.com/memetreza34-ux/Claud-clips.git
@@ -20,7 +20,7 @@ npm ci
 ```
 
 ```bash
-python3 -m venv .venv
+python3.12 -m venv .venv
 ```
 
 ```bash
@@ -31,6 +31,16 @@ Voice model, only needed to generate the narration:
 
 ```bash
 mkdir -p models/kokoro && curl -L -o models/kokoro/kokoro-v1.0.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx && curl -L -o models/kokoro/voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+```
+
+Narration and word timings (`--model` takes any whisper.cpp `ggml-*.bin` model):
+
+```bash
+.venv/bin/python scripts/tts.py projects/pigeon/SCRIPT.md projects/pigeon/voice --speed 1.2
+```
+
+```bash
+.venv/bin/python scripts/words.py projects/pigeon/voice --model /path/to/ggml-medium.bin
 ```
 
 Test still of the example short:
@@ -46,16 +56,17 @@ Set `REMOTION_TMP` to a folder with plenty of space: Remotion bundles pile up in
 |---|---|
 | `projects/pigeon/SCRIPT.md` | Facts, sources and voice-over of the first short |
 | `src/videos/bridge/` | The example short from the template, the base for new shorts |
-| `scripts/` | Stills, QA helpers and `tts.py` (local narration) |
+| `projects/pigeon/voice/` | `voice.wav`, `lines.json` and `words.json` of the first short |
+| `scripts/` | Stills, QA helpers, `tts.py` (local narration) and `words.py` (word timings) |
 | `vendor/claude-animated-shorts/` | Upstream skill: `SKILL.md`, style notes, audio templates |
 
 ## Status
 | Step | State |
 |---|---|
-| Project setup, test render of the example short | Done |
-| Script for "The Pigeons Who Flew a Bomb" (Project Pigeon) | Draft, facts from Wikipedia; read the primary source before publishing |
-| Voice | Next. `tts.py` is written but has not run yet; the models are not downloaded |
-| Word timings | Open. `npx hyperframes` failed on Windows with `ECOMPROMISED`, try again on the Mac |
+| Project setup, test still of the example short on the Mac | Done |
+| Script for "The Pigeons Who Flew a Bomb" (Project Pigeon) | Draft v2, facts from Wikipedia; read the primary source before publishing |
+| Voice | First take, 71 s; pronunciation still to be checked by ear |
+| Word timings | First pass from `words.py`; a few words are up to about 0.3 s off and need a hand fix against the shots |
 | Kenney 3D models in `public/bridge/kenney/` | Not downloaded yet; the example still renders without them |
 | Own world, characters, cameras, sound, final render | Open |
 

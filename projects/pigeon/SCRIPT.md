@@ -1,6 +1,6 @@
-# "The Pigeons Who Flew a Bomb" - script v1
+# "The Pigeons Who Flew a Bomb" - script v2
 
-Format: vertical short, English, about 3.7 words/s, one narrator, hook on the first frame, no intro or outro.
+Format: vertical short, English, about 70 s (Kokoro am_michael, `--speed 1.2`), one narrator, hook on the first frame, no intro or outro.
 
 ## Facts and sources
 - B. F. "Fred" Skinner's WWII pigeon-guided bomb, later renamed Project Orcon. (Wikipedia: Project Pigeon)
@@ -17,21 +17,20 @@ Primary source to read before publishing: Skinner, "Pigeons in a Pelican", Ameri
 
 ## Voice-over
 America once paid a scientist twenty-five thousand dollars to let pigeons fly a bomb.
-It's World War Two, bombs can't steer, and no computer is small enough to fit inside one.
+It's World War Two, and no computer is small enough to steer a bomb.
 But a psychologist named Fred Skinner looks at a pigeon and thinks, "That's a computer."
 A defense committee calls his idea eccentric and impractical, then hands him the money anyway.
 So Fred builds it.
-Lenses in the nose of the bomb throw a picture of the target onto a tiny screen.
-Up to three pigeons sit in front of it, trained to peck that target.
-If the bomb drifts, the target slides sideways, the pigeons peck after it, the screen tilts, and the fins steer the bomb back.
-And these birds are serious. One of them pecked over ten thousand times in forty-five minutes.
+Lenses in the bomb's nose throw a picture of the target onto a tiny screen.
+Up to three pigeons are trained to peck that target.
+If the bomb drifts, the target slides, the pigeons peck after it, and the fins steer the bomb back.
+One bird pecked over ten thousand times in forty-five minutes.
 Wait, what if the pigeons disagree?
 Fred thought of that. Two birds outvote the third, and the third gets punished for his minority opinion.
-You see, a pigeon doesn't know what a war is. It knows snacks.
+A pigeon doesn't know what a war is. It knows snacks.
 Ever kept tapping a phone game because the next tap might pay out?
-Fred only rewarded the faster pecks, so the birds just kept getting faster.
-In Fred's own words, the problem was that no one would take them seriously.
-The military shut it down in 1944, tried again in 1948, and gave up for good once electronics finally worked.
-Decades later, Fred finally got his award: the Ig Nobel Peace Prize.
+Fred only rewarded faster pecks, so the birds kept getting faster.
+The military shut it down in 1944, tried again in 1948, and gave up once electronics worked.
+Decades later, Fred got his award: the Ig Nobel Peace Prize.
 He'd been dead for thirty-four years.
 And yes, that's a peace prize. For a bomb.
