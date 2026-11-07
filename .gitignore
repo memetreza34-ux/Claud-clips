@@ -1,0 +1,17 @@
+# Installed or generated, rebuilt by the setup steps in README.md
+node_modules/
+.venv/
+.npm-cache/
+.remotion-tmp/
+__pycache__/
+*.pyc
+
+# Voice models (311 MB, above GitHub's 100 MB file limit)
+models/
+
+# Finished renders can exceed the file limit; only small tests are kept
+out/*
+!out/test/
+
+.DS_Store
+Thumbs.db

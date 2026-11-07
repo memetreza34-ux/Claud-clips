@@ -1,0 +1,3 @@
+[submodule "vendor/claude-animated-shorts"]
+	path = vendor/claude-animated-shorts
+	url = https://github.com/mromidev/claude-animated-shorts
