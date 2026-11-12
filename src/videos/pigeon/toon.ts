@@ -423,6 +423,7 @@ const hatOn = (p: Pen, o: Outfit, hp: P2[], H: Blob, cx: number, hc: number, lig
 
 // ---------------- bodies ----------------
 export type Arms = [P2[], P2[]];
+export type ArmPose = "hang" | "point" | "up" | "wave" | "hip" | "belly" | "temple" | "lift" | "reach" | "cross" | "cheek" | "thumb";
 /** held prop; for the hammer the number is the strike 0 (raised) .. 1 (struck) */
 export type Prop = null | "icecream" | "shako" | ["hammer", number];
 
@@ -435,6 +436,9 @@ const BUILD: Record<Build, { a: number; torso: number; legs: number; tw: number 
 export type FrontOpts = {
   phase?: number; expr?: Expr; mode?: "march" | "stroll" | "stand" | "sit" | "fall"; look?: number; blink?: boolean | number; lift?: number;
   prop?: Prop; tilt?: number; headTilt?: number; wave?: number;
+  /** arm poses [left, right] (from the cartoon-short-kit's roman.js): hang, point, up, wave, hip, belly, temple, lift,
+   *  reach, cross, cheek, thumb. Overrides the default arms in every mode but sitting and falling. */
+  arms?: [ArmPose, ArmPose]; reachLift?: number;
   /** canvas angle the key light comes FROM (painted crescent + thick outline side) */
   light?: number; facing?: -1 | 0 | 1; seed?: number;
 };
@@ -508,9 +512,28 @@ export const bodyFront = (p: Pen, o: Outfit, opts: FrontOpts) => {
   // rifle at the order: butt by the right hip, held by the hanging right hand, muzzle past the crown
   const R0: P2 = [300 + 47 * u, torsoBot + 0.12 * HH], R1: P2 = [300 + 64 * u, crown - 0.32 * HH];
   const rifle = !!o.rifle && (mode === "march" || mode === "stand" || mode === "stroll");
-  type Arm = { pts: [P2, P2, P2]; front: boolean };
+  type Arm = { pts: [P2, P2, P2]; front: boolean; finger?: boolean; thumb?: boolean };
+  // posed arm (kit roman.js geometry on our torso): X(k) = k units out from the torso side
+  const posed = (side: number, pose: ArmPose): Arm => {
+    const s = sh(side), X = (k: number) => tcx + side * (T.a * 1.1 + k * u);
+    switch (pose) {
+      case "point": return { pts: [s, [X(28), s[1] - 0.02 * HH], [X(62), s[1] - 0.1 * HH]], front: false, finger: true };
+      case "up": return { pts: [s, [X(14), s[1] - 0.3 * HH], [X(22), s[1] - 0.75 * HH]], front: false };
+      case "wave": return { pts: [s, [X(16), s[1] - 0.2 * HH], [X(30 + 10 * Math.sin(opts.wave ?? 0)), s[1] - 0.62 * HH]], front: false };
+      case "hip": return { pts: [s, [X(22), s[1] + 0.3 * HH], [tcx + side * T.a * 0.95, torsoBot - 0.3 * HH]], front: false };
+      case "belly": return { pts: [s, [X(8), s[1] + 0.45 * HH], [tcx + side * 0.25 * T.a, torsoBot - 0.35 * HH]], front: true };
+      case "temple": return { pts: [s, [X(26), s[1] + 0.05 * HH], [300 + side * (H.a + 16 * u), hc - 0.1 * HH]], front: false };
+      case "lift": return { pts: [s, [X(20), s[1] - 0.25 * HH], [X(4), s[1] - 0.82 * HH]], front: false };
+      case "cross": return { pts: [s, [X(2), s[1] + 0.38 * HH], [tcx - side * 0.45 * T.a, s[1] + 0.32 * HH]], front: true };
+      case "reach": { const lf = (opts.reachLift ?? 0) * 0.62 * HH; return { pts: [s, [X(42), s[1] - 0.12 * HH - lf * 0.6], [X(82), s[1] - 0.5 * HH - lf]], front: false }; }
+      case "cheek": return { pts: [s, [X(16), s[1] + 0.05 * HH], [300 + side * (H.a + 2 * u), hc + 0.25 * H.b]], front: false };
+      case "thumb": return { pts: [s, [X(20), s[1] + 0.12 * HH], [X(44), s[1] - 0.12 * HH]], front: false, thumb: true };
+      default: return { pts: [s, [X(4), s[1] + 0.48 * HH], [X(3), chin + 1.04 * HH]], front: false };
+    }
+  };
   const arms: Arm[] = [];
-  if (mode === "sit") for (const side of [-1, 1]) arms.push({ pts: [sh(side), [tcx + side * (1.1 * T.a + 6 * u), sh(side)[1] + 0.4 * HH], [tcx + side * (1.2 * T.a + 10 * u), torsoBot + 0.04 * HH]], front: false });
+  if (opts.arms && mode !== "sit" && mode !== "fall") arms.push(posed(-1, opts.arms[0]), posed(1, opts.arms[1]));
+  else if (mode === "sit") for (const side of [-1, 1]) arms.push({ pts: [sh(side), [tcx + side * (1.1 * T.a + 6 * u), sh(side)[1] + 0.4 * HH], [tcx + side * (1.2 * T.a + 10 * u), torsoBot + 0.04 * HH]], front: false });
   else if (mode === "fall") for (const side of [-1, 1]) arms.push({ pts: [sh(side), [tcx + side * (1.15 * T.a + 12 * u), sh(side)[1] - 0.25 * HH], [tcx + side * (1.3 * T.a + 24 * u), sh(side)[1] - 0.68 * HH]], front: false });
   else {
     arms.push({ pts: prop === "shako" ? hang(-1, 0) : hang(-1, -sw), front: false });
@@ -530,7 +553,13 @@ export const bodyFront = (p: Pen, o: Outfit, opts: FrontOpts) => {
       arms.push({ pts: [S, E, Hd], front: true });
     } else arms.push({ pts: hang(1, sw), front: false });
   }
-  const drawArm = (a: Arm) => { p.stroke(curve(a.pts[0], a.pts[1], a.pts[2]), 5.2 * u, armCol); p.dot(a.pts[2][0], a.pts[2][1], 5.5 * u); };
+  const drawArm = (a: Arm) => {
+    p.stroke(curve(a.pts[0], a.pts[1], a.pts[2]), 5.2 * u, armCol);
+    const [hx, hy] = a.pts[2];
+    p.dot(hx, hy, 5.5 * u);
+    if (a.finger) { const dx = hx - a.pts[1][0], dy = hy - a.pts[1][1], l = Math.hypot(dx, dy) || 1; p.stroke([[hx, hy], [hx + (dx / l) * 14 * u, hy + (dy / l) * 14 * u]], 2.6 * u); }
+    if (a.thumb) p.stroke([[hx, hy], [hx + Math.sign(hx - 300) * 6 * u, hy - 12 * u]], 2.6 * u);
+  };
   // behind the body: rifle, sword, arms
   if (rifle) {
     p.band([R0, R1], "#7a4b2a", 5 * u, 1.5 * u, "round");

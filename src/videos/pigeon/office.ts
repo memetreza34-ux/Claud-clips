@@ -2,8 +2,10 @@
 // (calendar pages, revived, replaced by electronics). Room x -4..4, z -3..3 like the lab: long committee table in the
 // middle, map table on the right, filing cabinet on the left, two tall windows and a wall calendar on the back wall.
 import * as THREE from "three";
-import { Batch, boxGeo, V, lam } from "./build";
+import { Batch, boxGeo, V, lam, Kit } from "./build";
+import { placeProp } from "./props";
 import { ctex, planksHD } from "./paint";
+import { wallpaperTex, panelTex, grainTex, nightTex, plasterTex } from "./ptex";
 import { fxPuff, FrontOpts } from "./toon";
 import { NOINK } from "./ink";
 import { drawFred, FRED, COMMITTEE, OFFICERS, fxSeeds, fxBag, fxStamp, fxFolder, fxPage, fxIdea } from "./pcast";
@@ -15,21 +17,21 @@ const fxTrophy = (p: Pen) => {
   p.poly([[135, 225], [165, 225], [170, 300], [130, 300]], "#e0b440", 8);
   p.poly([[90, 300], [210, 300], [220, 350], [80, 350]], "#5a3b2a", 9);
 };
-import { RoomWorld, ShotCam, Stage, V3, camOf, dofOf, roomShell, pigeonAt, personAt, contact, card, flatCard, clamp01, rad, LEAD, q, blinkAt, glide } from "./room";
+import { RoomWorld, ShotCam, Stage, V3, camOf, dofOf, roomShell, pigeonAt, personAt, contact, card, flatCard, clamp01, rad, LEAD, q, blinkAt, glide, isNight, ease } from "./room";
 
 // ---------------- cameras ----------------
 const CAMS: Record<number, ShotCam> = {
   2: { keys: [{ f: 152, pos: [1.0, 1.7, 2.1], look: [2.7, 1.1, -0.3], fov: 42 }], creep: 0.001, kicks: [220], cInf: [9] },
   18: { keys: [{ f: 1882, pos: [0.0, 1.5, 1.8], look: [0.0, 1.6, -2.4], fov: 46 }], creep: 0.001, punch: [1951], cInf: [8] },
   19: { keys: [{ f: 1998, pos: [0.0, 1.9, 0.6], look: [0.0, 2.1, -2.95], fov: 42 }], creep: 0.002, punch: [2012], cInf: [6] },
-  20: { keys: [{ f: 2056, pos: [0.2, 1.35, 0.6], look: [0.0, 0.95, -1.2], fov: 42 }], creep: 0.001, punch: [2105], cInf: [10] },
+  20: { keys: [{ f: 2056, pos: [0.1, 1.35, 0.6], look: [0.0, 0.95, -1.2], fov: 42 }], creep: 0.001, punch: [2105], cInf: [10] },
   4: { keys: [{ f: 409, pos: [-1.5, 1.5, 1.6], look: [-0.9, 1.4, -2.0], fov: 36 },
     { f: 452, dur: 30, pos: [0.1, 1.5, 1.6], look: [0.3, 1.4, -2.0], fov: 36 },
     { f: 515, dur: 22, pos: [-0.5, 1.55, 1.9], look: [-0.7, 1.05, -1.3], fov: 50 }], creep: 0.0008, cInf: [9, 9, 7] },
   13: { keys: [{ f: 1335, pos: [1.0, 1.7, 2.1], look: [2.7, 0.95, 0.0], fov: 40 }], creep: 0.001, punch: [1410], cInf: [10] },
   16: { keys: [{ f: 1655, pos: [0.25, 1.5, 0.9], look: [0.0, 1.0, -1.5], fov: 40 }], creep: 0.001, kicks: [1686], cInf: [10] },
   17: { keys: [{ f: 1751, pos: [0.3, 1.55, 1.6], look: [0.4, 1.3, -1.8], fov: 50 },
-    { f: 1835, dur: 20, pos: [0.4, 1.4, 1.1], look: [0.7, 1.0, -1.3], fov: 44 }], creep: 0.0006, kicks: [1826], cInf: [6, 9] },
+    { f: 1835, dur: 20, pos: [0.45, 1.4, 1.1], look: [0.8, 1.05, -1.3], fov: 46 }], creep: 0.0006, kicks: [1826], cInf: [6, 9] },
 };
 export const officeCam = camOf(CAMS);
 export const officeDof = dofOf(CAMS);
@@ -77,18 +79,19 @@ const TABLE_Y = 0.78, MAP_Y = 0.84;
 
 export class OfficeWorld extends RoomWorld {
   private box = new THREE.Group();
+  private views: THREE.MeshBasicMaterial[] = [];
   private lights: THREE.MeshBasicMaterial[] = [];
 
-  constructor() {
+  constructor(kit: Kit) {
     super(officeCam);
     const R = this.root, walls = new Batch(), things = new Batch();
     const M = {
-      floor: lam("offFloor", () => ({ map: planksHD(), color: "#b98a62" })),
-      low: lam("offLow", () => ({ color: "#6b4a33" })),
-      wall: lam("offWall", () => ({ color: "#cfd8c0" })),
+      floor: lam("offFloor", () => ({ map: planksHD(), color: "#d4a77c" })),
+      low: lam("offLowP", () => ({ map: panelTex("#94704f") })),
+      wall: lam("offWallP", () => ({ map: wallpaperTex("#e2e8d4", "#c9d4b8") })),
       rail: lam("offRail", () => ({ color: "#4e3423" })),
-      ceil: lam("offCeil", () => ({ color: "#efe8d8" })),
-      table: lam("offTable", () => ({ color: "#5a3a26" })),
+      ceil: lam("offCeilP", () => ({ map: plasterTex("#efe8d8") })),
+      table: lam("offTableG", () => ({ map: grainTex("#86593b") })),
       leg: lam("offLeg", () => ({ color: "#4a3020" })),
       blotter: lam("offBlotter", () => ({ color: "#3f6b4f" })),
       frame: lam("offFrame", () => ({ color: "#f3efe4" })),
@@ -105,6 +108,7 @@ export class OfficeWorld extends RoomWorld {
         [V(xc - 0.56, 1.2, -3.05), V(xc - 0.5, 2.75, -2.94)], [V(xc + 0.5, 1.2, -3.05), V(xc + 0.56, 2.75, -2.94)],
         [V(xc - 0.03, 1.2, -3.02), V(xc + 0.03, 2.75, -2.98)], [V(xc - 0.5, 1.95, -3.02), V(xc + 0.5, 2.01, -2.98)]] as const) things.add(boxGeo(a, b), M.frame);
       const view = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 3.2), new THREE.MeshBasicMaterial({ map: cityTex() }));
+      this.views.push(view.material);
       view.position.set(xc, 1.9, -3.4); view.layers.set(NOINK); R.add(view);
     }
     // portrait (gold frame) and wall calendar on the back wall
@@ -143,16 +147,30 @@ export class OfficeWorld extends RoomWorld {
       const l = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 8), m);
       l.position.set(0.02 + (i % 2) * 0.09, 0.1 + Math.floor(i / 2) * 0.1, 0.145); this.box.add(l); this.lights.push(m);
     }
-    this.box.position.set(0.95, TABLE_Y, -1.2); this.box.visible = false; R.add(this.box);
+    this.box.position.set(0.72, TABLE_Y, -1.15); this.box.visible = false; R.add(this.box);
+    // CC0 furniture: bookcases on the left wall, plants and lamps by the windows, rugs, coat rack, radio, books
+    const glow = new Batch(), P = (n: string, x: number, y: number, z: number, h: number, yaw = 0) => placeProp(things, glow, kit, n, x, y, z, { h }, yaw);
+    P("bookcaseClosedDoors", -3.8, 0, -0.5, 1.95, Math.PI / 2); P("bookcaseClosedWide", -3.82, 0, 0.9, 1.6, Math.PI / 2);
+    P("pottedPlant", -1.85, 0, -2.72, 1.2); P("pottedPlant", 1.9, 0, -2.72, 1.2);
+    P("lampSquareFloor", 3.6, 0, -2.6, 1.75); P("lampRoundFloor", -3.6, 0, -1.45, 1.7);
+    placeProp(walls, glow, kit, "rugRectangle", 0, 0.004, -1.25, { w: 3.8 });
+    placeProp(walls, glow, kit, "rugRound", 2.7, 0.004, 0.05, { w: 2.0 });
+    P("coatRackStanding", -3.5, 0, 2.3, 1.75);
+    P("radio", -3.65, 1.35, -2.15, 0.3, Math.PI / 2);
+    P("books", 3.3, MAP_Y, 0.45, 0.16, 0.4); P("books", -1.3, TABLE_Y, -1.55, 0.14, -0.3);
+    P("lampRoundTable", 1.35, TABLE_Y, -1.6, 0.42);
+    P("speakerSmall", -3.6, 1.35, -2.35, 0.3, Math.PI / 2);
     walls.build(R, false);
     things.build(R, true);
+    glow.build(R, false);
   }
 
   protected tick(id: number, f: number) {
+    for (const v of this.views) v.map = isNight(id) ? nightTex("city", true) : cityTex();
     const t0 = 1844 - LEAD;
     this.box.visible = id === 17 && f >= t0;
     if (this.box.visible) {
-      const u = (f - t0) / 4, s = u < 1 ? 0.5 + 0.6 * u : 1 + 0.1 * Math.max(0, 1 - (u - 1) / 3) * Math.sin((u - 1) * 3);
+      const s = 0.3 + 0.7 * ease.back((f - t0) / 6); // pops in with an overshoot
       this.box.scale.setScalar(s);
       const cols = ["#ff5a4a", "#ffcc33", "#5ad16a", "#5ab0ff"];
       this.lights.forEach((m, i) => m.color.set(((f >> 2) + i) % 3 ? cols[i] : "#3a3f4a"));
@@ -171,32 +189,33 @@ export const officeStage = (id: number, f: number, light: number): Stage => {
   const out: Stage = { places: [], fx: [] }, L = lt(light);
   if (id === 4) {
     const shake = f >= 493 - LEAD && f < 510 ? 7 * Math.sin(((f - 491) / 6) * Math.PI * 2) * (1 - (f - 491) / 19) : 0;
-    out.places.push(member(0, { expr: f >= 467 - LEAD ? "nervous" : "stern", blink: blinkAt(f, 2), light: L }));
-    out.places.push(member(1, { expr: f >= 493 - LEAD ? "stern" : "neutral", headTilt: q(shake), blink: blinkAt(f, 3), light: L }));
-    out.places.push(member(2, { expr: f >= 551 - LEAD ? "smile" : "neutral", blink: blinkAt(f, 4), light: L }));
-    out.places.push(fred(-2.15, -0.5, { expr: f >= 529 - LEAD ? "grin" : "neutral", facing: 1, look: 1, blink: blinkAt(f, 1), light: L }));
+    out.places.push(member(0, { expr: f >= 467 - LEAD ? "nervous" : "stern", blink: blinkAt(f, 2), light: L, arms: f >= 467 - LEAD && f < 520 ? ["hang", "temple"] : undefined }));
+    out.places.push(member(1, { expr: f >= 493 - LEAD ? "stern" : "neutral", headTilt: q(shake), blink: blinkAt(f, 3), light: L, arms: f >= 493 - LEAD ? ["cross", "cross"] : undefined }));
+    out.places.push(member(2, { expr: f >= 551 - LEAD ? "smile" : "neutral", blink: blinkAt(f, 4), light: L, arms: f >= 525 - LEAD && f < 552 ? ["reach", "hang"] : undefined }));
+    out.places.push(fred(-2.15, -0.5, { expr: f >= 529 - LEAD ? "grin" : "neutral", facing: 1, look: 1, blink: blinkAt(f, 1), light: L, arms: f >= 547 - LEAD ? ["hang", "up"] : ["hang", "hang"] }));
     contact(out, -2.15, 0, -0.5, 0.6);
     // the money bag slides from the third member along the table toward Fred
-    const u = glide((f - (527 - LEAD)) / 22), x = 0.9 + (-1.35 - 0.9) * u;
+    const u = ease.back((f - (527 - LEAD)) / 22, 1.2), x = 0.9 + (-1.35 - 0.9) * u; // slides, overshoots a little, settles
     card(out, "bag", 300, 300, fxBag, x, TABLE_Y + 0.17, -1.15, 0.36);
   } else if (id === 13) {
-    out.places.push(officer(0, 2.3, -0.95, { expr: "stern", look: 1, blink: blinkAt(f, 5), light: L }));
-    out.places.push(officer(1, 3.15, -0.95, { expr: "stern", look: -1, blink: blinkAt(f, 6), light: L }));
+    out.places.push(officer(0, 2.3, -0.95, { expr: "stern", look: 1, blink: blinkAt(f, 5), light: L, arms: ["hip", "hip"] }));
+    out.places.push(officer(1, 3.15, -0.95, { expr: "stern", look: -1, blink: blinkAt(f, 6), light: L, arms: ["cross", "cross"] }));
     const u = clamp01((f - 1335) / 95), x = 2.05 + 1.1 * u, step = Math.sin(((f - 1335) / 6) * Math.PI);
     const happy = f >= 1410 - LEAD;
     out.places.push(pigeonAt("map", [x, MAP_Y, 0.05], { light: L, look: happy ? "happy" : "neutral", nod: happy ? 0 : step * 0.5, cap: true }));
     contact(out, x, MAP_Y, 0.05, 0.22);
     if (happy && f < 1430) { const t = q((f - 1408) / 22); card(out, `seeds|${t}`, 300, 200, (p) => fxSeeds(p, t), x + 0.12, MAP_Y + 0.12, 0.1, 0.32, true); }
   } else if (id === 16) {
-    out.places.push(officer(0, 0, -2.05, { expr: "stern", blink: blinkAt(f, 5), light: L }));
+    out.places.push(officer(0, 0, -2.05, { expr: "stern", blink: blinkAt(f, 5), light: L, arms: f < 1686 - 12 ? ["hang", "lift"] : ["hip", "hang"] }));
     const hit = 1686 - 1, stamped = f >= hit;
     flatCard(out, `folder|${stamped}`, 400, 300, (p) => fxFolder(p, stamped), 0, TABLE_Y + 0.008, -1.2, 0.5);
-    const y = f < hit - 6 ? 1.08 : f < hit ? 1.08 - (0.22 * (f - (hit - 6))) / 6 : f < hit + 4 ? 0.86 : Math.min(1.08, 0.86 + (f - hit - 4) * 0.03);
+    // wind-up then slam (kit anticipation), hold, then back up with a small spring
+    const y = f < hit ? 1.08 - 0.22 * ease.anticip((f - (hit - 12)) / 12) : f < hit + 4 ? 0.86 : 0.86 + 0.22 * ease.spring((f - hit - 4) / 30, 1.2, 6);
     card(out, "stamp", 200, 300, fxStamp, 0.05, y + 0.15, -1.15, 0.2);
     if (f >= hit && f < hit + 14) { const t = q((f - hit) / 14); card(out, `puff|${t}`, 300, 260, (p) => fxPuff(p, t), 0.05, TABLE_Y + 0.1, -1.1, 0.6, true); }
   } else if (id === 17) {
-    out.places.push(officer(0, -0.6, -2.05, { expr: f >= 1826 - LEAD ? "stern" : "neutral", blink: blinkAt(f, 5), light: L }));
-    out.places.push(officer(1, 0.6, -2.05, { expr: f >= 1844 - LEAD ? "shock" : "neutral", blink: blinkAt(f, 6), light: L }));
+    out.places.push(officer(0, -0.6, -2.05, { expr: f >= 1826 - LEAD ? "stern" : "neutral", blink: blinkAt(f, 5), light: L, arms: f >= 1826 - LEAD ? ["cross", "cross"] : ["hang", "hip"] }));
+    out.places.push(officer(1, 0.6, -2.05, { expr: f >= 1844 - LEAD ? "shock" : "neutral", blink: blinkAt(f, 6), light: L, arms: f >= 1844 - LEAD ? ["up", "up"] : ["hang", "hang"] }));
     // calendar pages tear off and fly (time passing), from 1751
     for (let i = 0; i < 6; i++) {
       const t = (f - (1751 - LEAD) - i * 5) / 28;
@@ -221,18 +240,20 @@ export const officeStage = (id: number, f: number, light: number): Stage => {
     }
   }
   if (id === 2) {
-    out.places.push(officer(0, 2.3, -0.95, { expr: "stern", blink: blinkAt(f, 5), light: L }));
-    out.places.push(officer(1, 3.15, -0.95, { expr: f >= 220 - LEAD ? "nervous" : "neutral", blink: blinkAt(f, 6), light: L }));
+    out.places.push(officer(0, 2.3, -0.95, { expr: "stern", blink: blinkAt(f, 5), light: L, arms: ["hip", "hip"] }));
+    out.places.push(officer(1, 3.15, -0.95, { expr: f >= 220 - LEAD ? "nervous" : "neutral", blink: blinkAt(f, 6), light: L, arms: f >= 220 - LEAD ? ["temple", "hang"] : ["hang", "hang"] }));
   } else if (id === 18) {
-    for (const i of [0, 1, 2]) out.places.push(member(i, { expr: "smile", blink: blinkAt(f, 2 + i), light: L }));
+    const cheer = f >= 1951 - LEAD;
+    for (const i of [0, 1, 2]) out.places.push(member(i, { expr: cheer ? "grin" : "smile", blink: blinkAt(f, 2 + i), light: L,
+      arms: cheer ? (i === 1 ? ["up", "up"] : i === 0 ? ["thumb", "hang"] : ["hang", "thumb"]) : undefined }));
     if (f >= 1951 - LEAD) card(out, `idea|${q(clamp01((f - 1949) / 12))}`, 300, 300, (p) => fxIdea(p, clamp01((f - 1949) / 12)), 0.3, TABLE_Y + 0.55, -1.15, 0.3);
     card(out, "trophy", 300, 400, fxTrophy, 0, TABLE_Y + 0.2, -1.15, 0.3);
   } else if (id === 20) {
-    card(out, "trophy", 300, 400, fxTrophy, -0.25, TABLE_Y + 0.2, -1.15, 0.3);
+    card(out, "trophy", 300, 400, fxTrophy, -0.18, TABLE_Y + 0.2, -1.15, 0.3);
     if (f >= 2105 - LEAD) {
       const u = clamp01((f - 2103) / 8), y = TABLE_Y + 0.6 * (1 - u);
-      out.places.push(pigeonAt("final", [0.25, y, -1.15], { light: L, look: "happy", cap: true }));
-      if (u >= 1) contact(out, 0.25, TABLE_Y, -1.15, 0.22);
+      out.places.push(pigeonAt("final", [0.12, y, -1.15], { light: L, look: "happy", cap: true }));
+      if (u >= 1) contact(out, 0.12, TABLE_Y, -1.15, 0.22);
     }
   }
   return out;

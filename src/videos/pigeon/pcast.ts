@@ -15,10 +15,12 @@ const FRED_SEED = 3;
 /** Fred standing (front view) with round glasses drawn over the eyes */
 export const drawFred = (p: Pen, o: FrontOpts) => {
   const facing = o.facing ?? 0, seed = FRED_SEED;
-  bodyFront(p, FRED, { ...o, seed, mode: "stand" });
-  // head centre exactly as bodyFront places it for an adult standing still
+  const mode = o.mode ?? "stand";
+  bodyFront(p, FRED, { ...o, seed, mode });
+  // head centre exactly as bodyFront places it for an adult (standing, or strolling with its 1.5 % body bob)
   const H = headBlob(seed, 118, facing), HH = 2 * H.b, u = (2 * H.a) / 100;
-  const hc = 975 - 1.4 * HH - 1.1 * HH - H.b;
+  const bob = mode === "stroll" ? 0.015 * (1 + 1.1 + 1.4) * HH * Math.cos(4 * Math.PI * (o.phase ?? 0)) : 0;
+  const hc = 975 - 1.4 * HH - 1.1 * HH - H.b + bob;
   const fx = 300 + 7 * u * facing;
   p.rot = null;
   for (const s of [-1, 1]) p.ell(fx + s * 13 * u, hc, 10.5 * u, 9.5 * u, null, 2.6 * u);

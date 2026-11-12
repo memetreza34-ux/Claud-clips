@@ -3,23 +3,22 @@
 // Room: x -4..4, z -3..3 (camera side open), floor y = 0. Desk + window on the back wall left, training table with the
 // target screen on the right, workbench on the left wall, blackboard + clock on the right wall.
 import * as THREE from "three";
-import { Batch, boxGeo, V, lam } from "./build";
+import { Batch, boxGeo, V, lam, Kit } from "./build";
+import { placeProp } from "./props";
 import { ctex, planksHD } from "./paint";
+import { wallpaperTex, panelTex, grainTex, nightTex, plasterTex } from "./ptex";
 import { Pen, fxPuff, FrontOpts } from "./toon";
 import { NOINK } from "./ink";
 import { drawFred, fxSeeds, fxSpeed, fxRain, fxIdea, fxWindow, PigeonOpts, FRED } from "./pcast";
-import { RoomWorld, ShotCam, Stage, V3, camOf, dofOf, roomShell, pigeonAt, personAt, contact, card, clamp01, rad, LEAD, q, blinkAt, peckAt, glide } from "./room";
+import { RoomWorld, ShotCam, Stage, V3, camOf, dofOf, roomShell, pigeonAt, personAt, contact, card, clamp01, rad, LEAD, q, blinkAt, peckAt, glide, isNight, ease } from "./room";
 
 // ---------------- cameras ----------------
 const CAMS: Record<number, ShotCam> = {
-  1: { keys: [{ f: 0, pos: [-1.75, 1.35, 2.95], look: [-2.1, 1.4, 0.85], fov: 64 }], creep: 0.0012, punch: [135], cInf: [10] },
   6: { keys: [{ f: 611, pos: [1.85, 1.12, -1.2], look: [2.44, 1.12, -1.55], fov: 42 }], creep: 0.001, punch: [718], cInf: [12] },
   8: { keys: [{ f: 833, pos: [1.1, 1.2, -0.45], look: [2.05, 1.05, -1.55], fov: 42 },
     { f: 849, dur: 8, pos: [1.1, 1.2, -0.45], look: [2.05, 1.05, -1.55], fov: 41, roll: rad(4.5) }], creep: 0.001, cInf: [13, 13] },
-  9: { keys: [{ f: 945, pos: [-1.6, 1.3, 2.95], look: [-2.1, 1.4, 0.85], fov: 66 }], creep: 0.001, cInf: [9] },
-  14: { keys: [{ f: 1430, pos: [1.3, 1.1, -0.8], look: [2.02, 1.0, -1.57], fov: 36 }], creep: 0.001, punch: [1502], cInf: [14] },
   3: { keys: [{ f: 268, pos: [0.9, 1.55, 1.6], look: [-0.9, 1.15, -2.05], fov: 42 },
-    { f: 318, dur: 28, pos: [0.7, 1.45, 0.6], look: [-0.85, 1.2, -2.1], fov: 34 }], creep: 0.0008, punch: [381], cInf: [8, 11] },
+    { f: 318, dur: 28, pos: [0.85, 1.5, 1.05], look: [-0.7, 1.2, -2.1], fov: 38 }], creep: 0.0008, punch: [381], cInf: [8, 11] },
   5: { keys: [{ f: 572, pos: [-1.15, 1.45, 1.9], look: [-3.05, 1.05, 0.15], fov: 38 }], creep: 0.0012, kicks: [584, 598], cInf: [11] },
   7: { keys: [{ f: 745, pos: [0.95, 1.22, -0.15], look: [2.0, 1.0, -1.55], fov: 36 },
     { f: 790, dur: 30, pos: [1.1, 1.17, -0.4], look: [2.02, 0.98, -1.56], fov: 34 }], creep: 0.0008, cInf: [13, 13] },
@@ -27,7 +26,7 @@ const CAMS: Record<number, ShotCam> = {
   11: { keys: [{ f: 1101, pos: [0.8, 1.22, -0.15], look: [1.98, 1.0, -1.56], fov: 44 },
     { f: 1101, dur: 10, pos: [0.8, 1.22, -0.15], look: [1.98, 1.0, -1.56], fov: 43, roll: rad(4.5) }], creep: 0.001, cInf: [13, 13] },
   12: { keys: [{ f: 1158, pos: [0.2, 1.45, 0.9], look: [1.6, 1.05, -1.4], fov: 40 },
-    { f: 1290, dur: 30, pos: [1.35, 1.08, -0.85], look: [1.85, 0.98, -1.72], fov: 32 }], creep: 0.0006, punch: [1294], cInf: [9, 14] },
+    { f: 1290, dur: 30, pos: [1.35, 1.08, -0.85], look: [1.74, 1.0, -1.76], fov: 34, path: [[1.05, 1.3, 0.1]] }], creep: 0.0006, punch: [1294], cInf: [9, 14], drift: [0.08, 0.02, 0.04] },
   15: { keys: [{ f: 1536, pos: [1.5, 1.32, 0.2], look: [1.95, 1.0, -1.55], fov: 40 }], creep: 0.001, punch: [1635], cInf: [12] },
 };
 
@@ -73,21 +72,20 @@ const CLOCK: V3 = [3.96, 1.62, -1.55];
 
 export class LabWorld extends RoomWorld {
   private hands: THREE.Object3D[] = [];
-  private bomb = new THREE.Group();
-  private fins: THREE.Object3D[] = [];
+  private view!: THREE.MeshBasicMaterial;
 
-  constructor() {
+  constructor(kit: Kit) {
     super(labCam);
     const R = this.root;
     const walls = new Batch(), things = new Batch();
     const M = {
       floor: lam("labFloor", () => ({ map: planksHD(), color: "#e2c8a8" })),
-      wains: lam("labWains", () => ({ color: "#4f7f68" })),
-      wall: lam("labWall", () => ({ color: "#eadfc6" })),
+      wains: lam("labWainsP", () => ({ map: panelTex("#4f7f68") })),
+      wall: lam("labWallP", () => ({ map: wallpaperTex("#eadfc6", "#d8c9a8") })),
       rail: lam("labRail", () => ({ color: "#8a5a3c" })),
-      ceil: lam("labCeil", () => ({ color: "#f2ead8" })),
+      ceil: lam("labCeilP", () => ({ map: plasterTex("#f2ead8") })),
       wood: lam("labWood", () => ({ color: "#9a6a43" })),
-      top: lam("labTop", () => ({ color: "#7d5034" })),
+      top: lam("labTopG", () => ({ map: grainTex("#8a5a3a") })),
       metal: lam("labMetal", () => ({ color: "#6f7a86" })),
       dark: lam("labDark", () => ({ color: "#3a3f4a" })),
       paper: lam("labPaper", () => ({ color: "#f3efe4" })),
@@ -101,7 +99,7 @@ export class LabWorld extends RoomWorld {
       [V(-2.28, 1.15, -3.05), V(-2.2, 2.45, -2.94)], [V(-1.0, 1.15, -3.05), V(-0.92, 2.45, -2.94)],
       [V(-1.63, 1.15, -3.02), V(-1.57, 2.45, -2.98)], [V(-2.2, 1.77, -3.02), V(-1.0, 1.83, -2.98)]] as const) things.add(boxGeo(a, b), M.paper);
     const view = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.2), new THREE.MeshBasicMaterial({ map: outsideTex() }));
-    view.position.set(-1.6, 1.8, -3.4); view.layers.set(NOINK); R.add(view);
+    view.position.set(-1.6, 1.8, -3.4); view.layers.set(NOINK); R.add(view); this.view = view.material;
     // desk under the window: top, legs, drawer block, lamp, books, papers
     things.add(boxGeo(V(-2.35, DESK_Y - 0.05, -2.75), V(-0.85, DESK_Y, -1.95)), M.top);
     for (const [x, z] of [[-2.3, -2.7], [-0.9, -2.7], [-2.3, -2.0], [-0.9, -2.0]]) things.add(boxGeo(V(x - 0.04, 0, z - 0.04), V(x + 0.04, DESK_Y - 0.05, z + 0.04)), M.wood);
@@ -143,37 +141,32 @@ export class LabWorld extends RoomWorld {
       const g = new THREE.Group(); g.position.set(CLOCK[0] - 0.02, CLOCK[1], CLOCK[2]); g.add(h); R.add(g);
       this.hands.push(g);
     }
-    // the pigeon bomb on a cradle by the workbench: olive body along x, nose with a round window at x -1.4, four tail fins
-    const bm = { body: lam("bombBody", () => ({ color: "#6f7a55" })), nose: lam("bombNose", () => ({ color: "#9aa3ad" })), fin: lam("bombFin", () => ({ color: "#5a6445" })), rim: lam("bombRim", () => ({ color: "#3a3f4a" })) };
-    const bb = new Batch();
-    const body = new THREE.CylinderGeometry(0.28, 0.28, 1.1, 28); body.rotateZ(Math.PI / 2); bb.add(body, bm.body);
-    const nose = new THREE.CylinderGeometry(0.28, 0.06, 0.45, 28); nose.rotateZ(Math.PI / 2); nose.translate(0.775, 0, 0); bb.add(nose, bm.nose);
-    const tail = new THREE.CylinderGeometry(0.14, 0.28, 0.3, 28); tail.rotateZ(Math.PI / 2); tail.translate(-0.7, 0, 0); bb.add(tail, bm.body);
-    const ring = new THREE.TorusGeometry(0.1, 0.022, 8, 28); ring.translate(0.62, 0.02, 0.27); bb.add(ring, bm.rim);
-    bb.build(this.bomb, true);
-    for (let i = 0; i < 4; i++) {
-      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.02, 0.22), bm.fin);
-      fin.geometry.translate(0, 0, 0.11);
-      const g = new THREE.Group(); g.position.set(-0.78, 0, 0); g.rotation.x = (i * Math.PI) / 2; g.add(fin); this.bomb.add(g); this.fins.push(fin);
-    }
-    // hung nose-down from a test rig like a falling bomb (fits the vertical frame); wire up to the ceiling
-    this.bomb.position.set(-2.1, 1.5, 0.85); this.bomb.rotation.z = -Math.PI / 2; R.add(this.bomb);
-    things.add(boxGeo(V(-2.115, 2.45, 0.835), V(-2.085, 3.2, 0.865)), M.dark);
+    // CC0 furniture (Kenney Furniture Kit): bookcases, desk chair, floor lamp, plants, rug, boxes, radio, coat rack, fan
+    const glow = new Batch(), P = (n: string, x: number, y: number, z: number, h: number, yaw = 0) => placeProp(things, glow, kit, n, x, y, z, { h }, yaw);
+    P("bookcaseOpen", -0.3, 0, -2.82, 1.95); P("bookcaseOpen", 0.55, 0, -2.82, 1.95);
+    for (const [x, y] of [[-0.45, 0.5], [-0.15, 0.95], [0.4, 0.5], [0.7, 1.4], [-0.3, 1.4]]) P("books", x, y, -2.8, 0.2);
+    P("chairDesk", -2.0, 0, -1.7, 0.95, Math.PI);
+    P("lampSquareFloor", 0.95, 0, -2.75, 1.7);
+    P("lampRoundTable", -2.2, DESK_Y, -2.5, 0.45, 0.3);
+    P("pottedPlant", -3.55, 0, -2.6, 1.15); P("plantSmall1", -1.9, 1.15, -2.94, 0.32); P("plantSmall3", 3.55, 0, -0.4, 0.55);
+    placeProp(walls, glow, kit, "rugRectangle", 0.2, 0.004, -0.3, { w: 2.8 });
+    P("cardboardBoxClosed", -3.55, 0, 1.6, 0.5); P("cardboardBoxClosed", -3.55, 0.5, 1.6, 0.45, 0.4); P("cardboardBoxOpen", -3.05, 0, 2.05, 0.5, 0.3);
+    P("radio", -3.55, 0.92, -0.35, 0.3, Math.PI / 2);
+    P("coatRackStanding", 3.55, 0, 2.5, 1.75);
+    P("trashcan", -3.55, 0, -1.55, 0.5);
+    P("sideTableDrawers", 3.4, 0, -2.65, 0.75); P("books", 3.4, 0.75, -2.65, 0.18, 0.5);
+    P("ceilingFan", 0.2, 2.85, -0.5, 0.35);
     walls.build(R, false);
     things.build(R, true);
+    glow.build(R, false);
   }
 
   protected tick(id: number, f: number) {
+    this.view.map = isNight(id) ? nightTex("lab", false) : outsideTex();
     // clock: hands creep, then spin on "forty-five" (shot 10)
     const spin = id === 10 ? Math.max(0, f - 1069) * 0.55 : 0;
     this.hands[0].rotation.x = -(rad(60) + f * 0.004 + spin * 12);
     this.hands[1].rotation.x = -(rad(250) + f * 0.0004 + spin);
-    // shot 9: the bomb hangs tilted, the fins flap on "fins", it levels out on "back"
-    const tilt = id === 9 ? rad(12) * (1 - glide((f - 973) / 10)) : 0;
-    this.bomb.rotation.z = -Math.PI / 2 + tilt;
-    this.bomb.visible = id === 1 || id === 9; // only once it is built; in shot 5 it would block the workbench
-    const flap = id === 9 && f >= 951 && f < 978 ? rad(25) * Math.sin(((f - 951) / 6) * Math.PI) : 0;
-    this.fins.forEach((m, i) => (m.rotation.y = i % 2 ? flap : -flap));
   }
   protected stage(id: number, f: number, light: number) { return labStage(id, f, light); }
 }
@@ -193,7 +186,9 @@ export const labStage = (id: number, f: number, light: number): Stage => {
   const lt = q(light);
   if (id === 3) {
     const expr = f >= 381 - LEAD ? "grin" : f >= 328 - LEAD ? "smile" : "neutral";
-    out.places.push(fred(-0.45, -2.0, { expr, facing: -1, look: f >= 328 - LEAD ? -1 : 0, blink: blinkAt(f, 1), light: lt }));
+    // thinks (hand at the cheek) while he looks at the pigeon, then points at it: "That's a computer"
+    const arms: FrontOpts["arms"] = f >= 381 - LEAD ? ["point", "hang"] : f >= 328 - LEAD ? ["hang", "cheek"] : ["hang", "hang"];
+    out.places.push(fred(-0.45, -2.0, { expr, facing: -1, look: f >= 328 - LEAD ? -1 : 0, blink: blinkAt(f, 1), light: lt, arms }));
     contact(out, -0.45, 0, -2.0, 0.6);
     const nod = f >= 343 && f < 351 ? Math.sin(((f - 343) / 8) * Math.PI) : 0;
     P("desk", [-1.2, DESK_Y, -2.2], { look: "neutral", nod, scarf: false }, false, 1.1);
@@ -206,7 +201,7 @@ export const labStage = (id: number, f: number, light: number): Stage => {
   } else if (id === 7) {
     ([[P_LEAD, 750, { cap: true }], [P_SCARF, 754, { scarf: true }], [P_TUFT, 758, { tuft: true }]] as const).forEach(([at, t0, acc], i) => {
       if (f < t0 - LEAD) return;
-      const u = (f - (t0 - LEAD)) / 5, pop = u < 1 ? 0.6 + 0.55 * u : 1 + 0.15 * Math.max(0, 1 - (u - 1) * 0.8) * Math.sin((u - 1) * 3);
+      const pop = 0.4 + 0.6 * ease.back((f - (t0 - LEAD)) / 6); // pops in with an overshoot (kit motion.js)
       P(`p${i}`, at, { ...acc, look: "focus", peck: i === 0 ? peckAt(f, 798) : 0 }, false, Math.max(0.6, pop));
     });
     if (f >= 798 && f < 816) { const t = q((f - 798) / 18); card(out, `seeds|${t}`, 300, 200, (p) => fxSeeds(p, t), 2.3, TABLE_Y + 0.08, -1.55, 0.25, true); }
@@ -222,8 +217,13 @@ export const labStage = (id: number, f: number, light: number): Stage => {
   } else if (id === 12) {
     const nod = f >= 1196 - LEAD && f < 1214 ? Math.sin(((f - 1194) / 18) * Math.PI * 2) : 0;
     const fed = f >= 1266 - LEAD;
-    out.places.push(fred(0.8, -1.0, { expr: fed ? "stern" : "smile", facing: 1, blink: blinkAt(f, 1), light: lt }));
-    contact(out, 0.8, 0, -1.0, 0.6);
+    // Fred walks in from the left ("Fred thought of that") and stops by the table
+    const w = glide((f - 1158) / 34), fxp = 0.2 + 0.85 * w, walking = w < 1;
+    // arrives, hand on the hip; reaches out with the seed cup when the two good birds get fed
+    const arms: FrontOpts["arms"] = f >= 1262 - LEAD && f < 1300 ? ["hang", "reach"] : ["hip", "hang"];
+    out.places.push(fred(fxp, -1.25, { expr: fed ? "stern" : "smile", facing: 1, blink: blinkAt(f, 1), light: lt,
+      ...(walking ? { mode: "stroll" as const, phase: q(((f - 1158) / 16) % 1) } : { arms }) }));
+    contact(out, fxp, 0, -1.25, 0.6);
     P("lead", P_LEAD, { cap: true, look: fed ? "happy" : "neutral", nod });
     P("scarf", P_SCARF, { scarf: true, look: fed ? "happy" : "neutral", nod });
     P("tuft", P_TUFT, { tuft: true, look: fed ? "sulk" : "neutral" }, true);
@@ -240,21 +240,13 @@ export const labStage = (id: number, f: number, light: number): Stage => {
     const sp = clamp01((f - 1560) / 80);
     if (sp > 0) card(out, `speed|${q(sp)}`, 400, 300, (p) => fxSpeed(p, sp), P_LEAD[0] + 0.05, TABLE_Y + 0.2, P_LEAD[2] + 0.05, 0.45);
   }
-  if (id === 1 || id === 9) {
-    // three pilot heads in the bomb's nose window (window centre in bomb space: x 0.62, z 0.2)
-    const tilt = id === 9 ? rad(12) * (1 - glide((f - 973) / 10)) : 0;
-    const th = -Math.PI / 2 + tilt, wx = -2.1 + 0.62 * Math.cos(th) - 0.02 * Math.sin(th), wy = 1.5 + 0.62 * Math.sin(th) + 0.02 * Math.cos(th);
-    const k = q(0.5 + 0.5 * Math.sin(f / 3));
-    card(out, `window|${k}`, 300, 300, (p) => fxWindow(p, k), wx, wy, 0.85 + 0.3, 0.2);
-  } else if (id === 8 || id === 14) {
-    // the three pilots at the screen; pecks alternate, faster in 14 (phone-game tapping)
-    const per = id === 14 ? 6 : 10;
-    const pk = (o: number) => (0.5 + 0.5 * Math.sin((2 * Math.PI * (f + o)) / per));
+  if (id === 8) {
+    // the three pilots at the screen chasing the drifting target; pecks alternate
+    const pk = (o: number) => (0.5 + 0.5 * Math.sin((2 * Math.PI * (f + o)) / 10));
     const nod = 0;
     P("lead", P_LEAD, { cap: true, look: "focus", peck: pk(0), nod });
     P("scarf", P_SCARF, { scarf: true, look: "focus", peck: pk(3), nod });
     P("tuft", P_TUFT, { tuft: true, look: "focus", peck: pk(6), nod });
-    if (id === 14) card(out, "speed|1", 400, 300, (p) => fxSpeed(p, 1), P_LEAD[0] + 0.05, TABLE_Y + 0.2, P_LEAD[2] + 0.05, 0.45);
   } else if (id === 6) {
     P("lead", P_LEAD, { cap: true, look: "focus", peck: peckAt(f, 716) });
   }

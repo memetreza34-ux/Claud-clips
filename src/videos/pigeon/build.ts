@@ -31,10 +31,10 @@ export const lam = (key: string, make: () => THREE.MeshLambertMaterialParameters
 const lamOf = new Map<string, THREE.MeshLambertMaterial>();
 // the nature kit ships a teal palette; our valley wants storybook greens and browns
 const GREENS = ["#62ae4c", "#56a447", "#72b853"];
-const RECOLOR: Record<string, string> = { grass: "#6aab4f", leafsDark: "#4a9142", woodBark: "#8a5a3c", woodInner: "#e8cfa4", wood: "#a8724a",
+const RECOLOR: Record<string, string> = { carpet: "#9c4a3c", carpetDarker: "#6e3328", grass: "#6aab4f", leafsDark: "#4a9142", woodBark: "#8a5a3c", woodInner: "#e8cfa4", wood: "#a8724a",
   woodDark: "#7a4f33", dirt: "#8a6a4a", stone: "#b7b4ad" };
 /** Kenney GLB materials -> Lambert, so the whole world shares one lighting model */
-const toLambert = (m: THREE.Material) => {
+export const toLambert = (m: THREE.Material) => {
   let l = lamOf.get(m.uuid);
   if (!l) {
     const s = m as THREE.MeshStandardMaterial;

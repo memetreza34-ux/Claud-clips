@@ -49,7 +49,11 @@ Test still of the example short:
 mkdir -p out/test && node scripts/bridge-stills.mjs out/test/bridge_ 400 0.5
 ```
 
-Set `REMOTION_TMP` to a folder with plenty of space: Remotion bundles pile up in the temp folder.
+Big files live on the external SSD `T7`: `out/pigeon` and `models` are symlinks to `/Volumes/T7/Claud-clips/`. The code stays on the Mac because the T7 is exFAT (no symlinks, so `node_modules` and `.venv` would break there). Render with the temp folder on the T7, Remotion bundles pile up in it:
+
+```bash
+export TMPDIR=/Volumes/T7/Claud-clips/tmp/
+```
 
 ## Layout
 | Path | What it is |

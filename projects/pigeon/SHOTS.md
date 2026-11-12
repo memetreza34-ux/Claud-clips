@@ -52,7 +52,7 @@ flying calendar pages, trophy glints, olive branch.
 | 19 | 1998-2056 | He'd been dead for thirty-four years. | Stage, golden | The daughter at the lectern, Fred's portrait on an easel beside her. Slow push to the portrait. | 2012 push 0.6 %/f -> dead |
 | 20 | 2056-2131 | And yes, that's a peace prize. For a bomb. | Stage, golden | The trophy next to the bomb on stage; a pigeon lands on the bomb holding an olive branch. Last frame on the last word. | 2091 trophy -> prize; 2105 pigeon lands -> For |
 
-Crossfades: 268, 409, 745, 994, 1335, 1655, 1882 (8 frames; 6 at 745 and 994). Hard cuts elsewhere, match cuts at 1430 and 1536.
+Crossfades (8 frames) at every shot change except the white flash after the hook (152) and the two match cuts (beak -> finger at 1430, finger -> beak at 1536): the reference cuts hard at most once per short. Every shot opens with a short ease-out push (the camera travels into the moment).
 
 ## Open points
 - Captions: the README decision is one-word captions; the template has none, so they need their own layer.

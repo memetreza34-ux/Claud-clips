@@ -1,6 +1,6 @@
-# "The Pigeons Who Flew a Bomb" - script v2
+# "The Pigeons Who Flew a Bomb" - script v3
 
-Format: vertical short, English, about 70 s (Kokoro am_michael, `--speed 1.2`), one narrator, hook on the first frame, no intro or outro.
+Format: vertical short, English, about 3.7 words/s with pauses squeezed to 0.12 s (Kokoro, `--speed 1.25 --max-pause 0.12`), one narrator, hook on the first frame, no intro or outro.
 
 ## Facts and sources
 - B. F. "Fred" Skinner's WWII pigeon-guided bomb, later renamed Project Orcon. (Wikipedia: Project Pigeon)
@@ -27,7 +27,7 @@ If the bomb drifts, the target slides, the pigeons peck after it, and the fins s
 One bird pecked over ten thousand times in forty-five minutes.
 Wait, what if the pigeons disagree?
 Fred thought of that. Two birds outvote the third, and the third gets punished for his minority opinion.
-A pigeon doesn't know what a war is. It knows snacks.
+You see, a pigeon doesn't know what a war is. It knows snacks.
 Ever kept tapping a phone game because the next tap might pay out?
 Fred only rewarded faster pecks, so the birds kept getting faster.
 The military shut it down in 1944, tried again in 1948, and gave up once electronics worked.
