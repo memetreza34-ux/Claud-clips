@@ -13,7 +13,12 @@ Format: vertical short, English, about 3.7 words/s with pauses squeezed to 0.12 
 - 2024 Ig Nobel Peace Prize, accepted by his daughter. Skinner died in 1990, so 34 years later. (Wikipedia)
 
 Source: https://en.wikipedia.org/wiki/Project_Pigeon
-Primary source to read before publishing: Skinner, "Pigeons in a Pelican", American Psychologist 15(1), 1960.
+- [ ] Key facts checked against the primary source: Skinner, "Pigeons in a Pelican", American Psychologist 15(1), 1960.
+
+## Posting
+Title: The Pigeons Who Flew a Bomb
+Description: In World War Two, psychologist B. F. Skinner trained pigeons to steer a bomb. The prize came 34 years after his death. Source: https://en.wikipedia.org/wiki/Project_Pigeon
+Hashtags: #shorts #history #ww2 #psychology #pigeons
 
 ## Voice-over
 America once paid a scientist twenty-five thousand dollars to let pigeons fly a bomb.
