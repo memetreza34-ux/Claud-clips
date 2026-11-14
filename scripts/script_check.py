@@ -15,10 +15,19 @@ import statistics
 import sys
 from pathlib import Path
 
-WPS = 3.7
-WEAK_OPENER = re.compile(r"^(in \d|once upon|today|this is|have you|did you know|so,|hi\b|hey\b)", re.I)
-ANALOGY = re.compile(r"^(ever|imagine|picture|think|it's like|like)\b", re.I)
-QUOTE = re.compile(r'"[^"]+"|“[^”]+”')
+WPS = {"en": 3.7, "de": 3.1}
+WEAK_OPENER = re.compile(r"^(in \d|once upon|today|this is|have you|did you know|so,|hi\b|hey\b"
+                         r"|im jahr \d|es war einmal|heute|das ist|wusstest du|hallo\b)", re.I)
+ANALOGY = re.compile(r"^(ever|imagine|picture|think|it's like|like"
+                     r"|kennst du|stell dir|schon mal|hast du|das ist wie|wie wenn)\b", re.I)
+PIVOT = ("you see", "die sache ist", "der trick ist", "das problem ist")
+MYSTERY = ("Wait", "Moment")
+
+
+def language(text: str) -> str:
+    fmt = re.search(r"^Format:.*$", text, re.M)
+    return "de" if fmt and re.search(r"German|Deutsch", fmt.group(0)) else "en"
+QUOTE = re.compile(r'"[^"]+"|“[^”]+”|„[^“”]+[“”]')
 NUMBER = re.compile(r"\b\d[\d,.]*\b")
 
 
@@ -40,16 +49,18 @@ def script_rules(text: str) -> list[tuple[str, bool, str, str]]:
     lines = voice_lines(text)
     if not lines:
         return [("voice-over", False, "no lines under '## Voice-over'", "the narration, one sentence per line")]
-    sents = [s for line in lines for s in re.split(r"(?<=[.?!])\s+(?=[A-Z\"“])", line) if s]
+    sents = [s for line in lines for s in re.split(r"(?<=[.?!])\s+(?=[A-ZÄÖÜ\"“„])", line) if s]
     words = [len(s.split()) for s in sents]
     total = sum(words)
-    rules = [("length", 190 <= total <= 260, f"{total} words = {total / WPS:.0f} s", "190-260 words (51-70 s)")]
+    wps = WPS[language(text)]
+    lo, hi = round(51 * wps), round(70 * wps)
+    rules = [("length", lo <= total <= hi, f"{total} words = {total / wps:.0f} s", f"{lo}-{hi} words (51-70 s)")]
 
     hook = sents[0]
     rules.append(("hook", 10 <= words[0] <= 16 and not WEAK_OPENER.match(hook),
                   f"{words[0]} words: {short(hook, 34)}", "paradox as a fact, 10-16 words, no setup"))
 
-    pivot = next((i for i, s in enumerate(sents) if s.lower().startswith("you see")), None)
+    pivot = next((i for i, s in enumerate(sents) if s.lower().startswith(PIVOT)), None)
     if pivot is None:
         rules.append(("pivot", False, "no 'You see,'", "'You see,' at 45-80 % of the words"))
     else:
@@ -57,7 +68,7 @@ def script_rules(text: str) -> list[tuple[str, bool, str, str]]:
         rules.append(("pivot", 0.45 <= at <= 0.80, f"'You see' at {at:.0%}", "'You see,' at 45-80 % of the words"))
 
     before = sents[1:pivot] if pivot is not None else sents[1:]
-    mystery = next((s for s in before if s.startswith("Wait") or s.endswith("?")), None)
+    mystery = next((s for s in before if s.startswith(MYSTERY) or s.endswith("?")), None)
     rules.append(("mystery", mystery is not None, short(mystery or "none"), "a 'Wait, ...?' question before the pivot"))
 
     after = sents[pivot + 1: pivot + 4] if pivot is not None else []

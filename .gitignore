@@ -1,6 +1,7 @@
 # Installed or generated, rebuilt by the setup steps in README.md
 node_modules/
 .venv/
+.venv-qwen/
 .npm-cache/
 .remotion-tmp/
 __pycache__/
@@ -15,3 +16,10 @@ out/*
 
 .DS_Store
 Thumbs.db
+
+# Arman's voice recording stays local: the repo is public and the recording is enough to clone his voice
+voice-ref/*
+!voice-ref/meine-stimme.txt
+
+# Voice test takes
+projects/*/voice/proben/

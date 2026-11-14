@@ -43,6 +43,23 @@ Narration and word timings (`--model` takes any whisper.cpp `ggml-*.bin` model):
 .venv/bin/python scripts/words.py projects/pigeon/voice --model /path/to/ggml-medium.bin
 ```
 
+German shorts use the channel voice: Arman's own voice, cloned with Qwen3-TTS (MLX, Apple Silicon) from
+`voice-ref/meine-stimme.wav` and its transcript `voice-ref/meine-stimme.txt`. The venv and the model (about 2 GB) live on
+the internal SSD in `~/claud-clips-local/`: loaded from the USB T7 (where this project sits) the model stalls for minutes.
+`tts.py` sets `HF_HOME` to `~/claud-clips-local/hf` itself. Setup once:
+
+```bash
+python3.12 -m venv ~/claud-clips-local/venv-qwen && ~/claud-clips-local/venv-qwen/bin/pip install mlx-audio soundfile
+```
+
+Then for every German script:
+
+```bash
+~/claud-clips-local/venv-qwen/bin/python scripts/tts.py projects/bats/SCRIPT.md projects/bats/voice
+```
+
+Keep Hugging Face models off the exFAT T7: macOS writes `._*` files next to every file there, and they break model loading.
+
 Test still of the example short:
 
 ```bash
@@ -74,6 +91,6 @@ export TMPDIR=/Volumes/T7/Claud-clips/tmp/
 | Kenney 3D models in `public/bridge/kenney/` | Not downloaded yet; the example still renders without them |
 | Own world, characters, cameras, sound, final render | Open |
 
-Decisions so far: English, local Kokoro voice, own story and characters, one-word captions like the reference format. The upstream skill turns captions off, so they still have to be added.
+Decisions so far: German from the bat short on (English kept as a later second version), Arman's cloned voice via Qwen3-TTS (English: Kokoro), own story and characters, one-word captions like the reference format. The upstream skill turns captions off, so they still have to be added.
 
 Render speed on the Windows PC (8 GB RAM, Intel UHD): about 10 s per frame at 1080x1920, so about 6 hours for a 70 s short.
