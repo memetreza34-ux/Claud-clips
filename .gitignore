@@ -17,9 +17,8 @@ out/*
 .DS_Store
 Thumbs.db
 
-# Arman's voice recording stays local: the repo is public and the recording is enough to clone his voice
-voice-ref/*
-!voice-ref/meine-stimme.txt
+# Voice reference: the converted recording and its transcript are tracked (Arman's choice, the repo is public); the raw video is not
+voice-ref/*.mp4
 
 # Voice test takes
 projects/*/voice/proben/
