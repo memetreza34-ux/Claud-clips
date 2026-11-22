@@ -36,3 +36,52 @@ Lessons from "The Pigeons Who Flew a Bomb" (measured against the 20 reference sh
 
 ## After posting
 15. Fill `projects/<name>/RESULTS.md` after 48 hours and after 7 days. Find the line at each drop with `python3 scripts/script_check.py projects/<name> --at <seconds>`, and write the lesson into this checklist.
+
+## Look (Ricks Clips study, 2026-11-20: 3 YouTube tutorial transcripts + style bible)
+- **No AI image plates.** Everything is built in code: a real 3D world (three.js, the pigeon engine: ink outlines,
+  painted canvas textures, lens blur, bloom, grade) with flat 2D characters standing in it. Painted AI plates looked
+  too realistic (whale v1); the first copies of the style failed as "flat drawings in an empty 3D room".
+- **Rich places, simple people.** Every set full of detail (ribs, rivets, props, light beams); the characters stay simple
+  (white round heads, bean bodies, stick limbs), identity from hats and clothes.
+- **Colour:** very saturated, warm key light against blue/purple shadows, never pure black; light changes with the story.
+- **Show it on the word:** when the voice names a thing, it is on screen on that word (reference: 96 %).
+- **Camera:** one long shot per place: fly, land, rest, fly again; push in fast (< 0.5 s) on named things; change place
+  by flying through something instead of a cut. A new shot about every 2-3 s overall, a sound on every move.
+- **Motion:** wind-up, strike, hit, settle; never a frozen pose.
+- **Workflow:** storyboard (one still per shot) and check sheets before the full render; every fix becomes a rule here.
+- **Script:** "laugh at a genius": weird action, people laugh, it seems to fail, clue, payoff, science; last line that
+  loops or makes people argue in the comments.
+
+## Fast workflow (Google Flow keyframes, from 2026-11-20)
+Fastest good path: our script/voice/timing/captions/mix pipeline + one Google Flow still per shot (Nano Banana, 0 credits)
+in the look above, moved by our Remotion camera with our 2D effects on top (`src/videos/whale/flowshots.tsx`).
+- Prompt per shot: subject and action, shot size, place, then the fixed STYLE block ("stylized cartoon animation still,
+  a colourful lit 3D toy-like diorama world ... characters are flat 2D cartoon drawings (round plain white heads, dot eyes
+  under heavy lids, bean bodies, stick legs) ... Not photorealistic. Warm low sun, blue-purple shadows").
+- Keep people on-model: make one good still per character first and pass it as `reference_images` in every shot.
+- Where something changes on a word (car crushed), make two stills and switch on that word.
+- Real video clips (Omni 1.1 Flash, ~7 credits / 4 s) only for 1-3 climax shots.
+- Flow runs one job at a time: send all shots in one `flow_generate` call; agent batches and parallel character calls failed.
+- Topic choice (tutorial "Stickman Shorts with free tools", measured on the channel): true stories where one person
+  looks like an idiot and real physics proves them right average ~16 M views, "what if" stories ~4 M. Prefer them.
+- Cut: one sentence per shot, 4-6 s each, one place and one clear action per shot.
+
+## Lessons from the code-built whale test (2026-11-21, shot-judge 5.0 -> round 2)
+- Effects that matter to the story are 3D, not cards: blubber chunks as inked low-poly pieces (skin, fat, flesh) on
+  ballistic paths to chosen landing spots; 2D chunk cards with a coloured cap read as faces.
+- Dust and smoke clouds: opaque low-poly puffs with ink, rising as a column; translucent cards show the world's ink lines
+  through them. Let them leave the frame upward instead of shrinking into floating balls.
+- The payoff object stays: after the blast the whale lies there with a hole, wound caps, crater and burnt planks.
+- Light: warm low key from the side (`warm` preset in whalecode/room.ts: az 70, el 24) with violet shade; a backlit
+  big object turns into a flat purple slab.
+- Big props (a 14 m whale) need to sit diagonally in depth so their silhouette reads in a 9:16 frame.
+- Heads are white (#fbf8f2), never skin tone.
+
+## Lessons from the first full code-built short (whale, 2026-11-21)
+- Speed: work on the Mac, not the T7 (a still took 73 s from the T7, 13 s on the Mac, 4 s with the cached bundle).
+  Drafts skip the glitch repair (15 of 40 minutes). Move results to the T7 at the end.
+- Agents: 7 set agents on Opus with 4 still rounds used ~2 M tokens and hit the 5-hour limit. Now Sonnet, 2 rounds,
+  at most 4 at once; small fixes are done directly instead of by an agent.
+- The warm key is fixed per shot from the shot's first camera; when it lights the back of the subject (whale, back
+  wall) seed the shot's sun from the front-right (az ~125, el ~30) via RoomWorld's sunCache, as office.ts and beach.ts do.
+- A 14 m prop seen from close fills the frame as one flat colour: frame it from higher and further away.

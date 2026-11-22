@@ -1,12 +1,13 @@
 """Word timings for the narration: whisper-cli on one clip per line, spelled like SCRIPT.md.
 
 usage: .venv/bin/python scripts/words.py <voice_dir> [--model <ggml-model.bin>] [--lang de]
---model defaults to ~/claud-clips-local/whisper/ggml-large-v3-turbo.bin; --lang defaults to de when lines.json has German.
+--model defaults to $CLIPS_HOME/whisper/ggml-large-v3-turbo.bin (CLIPS_HOME defaults to ~/claud-clips-work); --lang defaults to de when lines.json has German.
 Reads voice.wav and lines.json from voice_dir, writes words.json: [{"w": word, "s": start, "e": end}, ...]
 Whole-file transcription was up to 0.66 s off at line starts, so every line is transcribed alone.
 Words whisper spells differently ("$25,000") get times by length between their matched neighbours.
 """
 import argparse
+import os
 import difflib
 import json
 import re
@@ -69,7 +70,7 @@ def align(script: list[str], heard: list[tuple[str, float, float]], dur: float) 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("voice_dir", type=Path)
-    ap.add_argument("--model", type=Path, default=Path.home() / "claud-clips-local/whisper/ggml-large-v3-turbo.bin")
+    ap.add_argument("--model", type=Path, default=Path(os.environ.get("CLIPS_HOME", Path.home() / "claud-clips-work")) / "whisper/ggml-large-v3-turbo.bin")
     ap.add_argument("--lang", default=None)
     args = ap.parse_args()
 

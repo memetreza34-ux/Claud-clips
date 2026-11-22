@@ -24,6 +24,11 @@ PIVOT = ("you see", "die sache ist", "der trick ist", "das problem ist")
 MYSTERY = ("Wait", "Moment")
 
 
+def is_long(text: str) -> bool:
+    fmt = re.search(r"^Format:.*$", text, re.M)
+    return bool(fmt and re.search(r"long video|langes video", fmt.group(0), re.I))
+
+
 def language(text: str) -> str:
     fmt = re.search(r"^Format:.*$", text, re.M)
     return "de" if fmt and re.search(r"German|Deutsch", fmt.group(0)) else "en"
@@ -53,8 +58,19 @@ def script_rules(text: str) -> list[tuple[str, bool, str, str]]:
     words = [len(s.split()) for s in sents]
     total = sum(words)
     wps = WPS[language(text)]
-    lo, hi = round(51 * wps), round(70 * wps)
-    rules = [("length", lo <= total <= hi, f"{total} words = {total / wps:.0f} s", f"{lo}-{hi} words (51-70 s)")]
+    long = is_long(text)
+    lo, hi = (round(360 * wps), round(720 * wps)) if long else (round(51 * wps), round(70 * wps))
+    rules = [("length", lo <= total <= hi, f"{total} words = {total / wps:.0f} s",
+              f"{lo}-{hi} words ({'6-12 min' if long else '51-70 s'})")]
+    if long:
+        # every blank-line paragraph is one shot: 2-8 s of speech (6-25 words)
+        body = text.split("## Voice-over", 1)[1]
+        paras = [p for p in re.split(r"\n\s*\n", body) if p.strip() and not p.strip().startswith("#")]
+        pw = [len(p.split()) for p in paras]
+        bad = [w for w in pw if w > 25]
+        rules.append(("paragraphs", not bad, f"{len(paras)} shots, {len(bad)} over 25 words", "one shot per paragraph, 6-25 words"))
+        loops = sum(1 for s in sents if s.startswith(MYSTERY) or s.endswith("?"))
+        rules.append(("re-hooks", loops >= max(3, total // (wps * 90)), f"{loops} questions", "a question or reveal every 60-90 s"))
 
     hook = sents[0]
     rules.append(("hook", 10 <= words[0] <= 16 and not WEAK_OPENER.match(hook),
@@ -76,13 +92,13 @@ def script_rules(text: str) -> list[tuple[str, bool, str, str]]:
     rules.append(("analogy", analogy is not None, short(analogy or "none"), "'Ever ...?' / 'Imagine ...' after the pivot"))
 
     quotes = sum(len(QUOTE.findall(line)) for line in lines)
-    rules.append(("dialogue", quotes >= 2, f"{quotes} quoted line(s)", "2+ short in-character lines (doubters, hero)"))
+    rules.append(("dialogue", quotes >= (4 if long else 2), f"{quotes} quoted line(s)", "2+ short in-character lines (doubters, hero)"))
 
-    rules.append(("payoff", words[-1] <= 10, f"{words[-1]} words: {short(sents[-1], 34)}", "last sentence 10 words or less"))
+    rules.append(("payoff", words[-1] <= (14 if long else 10), f"{words[-1]} words: {short(sents[-1], 34)}", "last sentence 10 words or less"))
 
-    long = [w for w in words if w > 24]
+    longs = [w for w in words if w > 24]
     med = statistics.median(words)
-    rules.append(("sentences", 9 <= med <= 16 and not long, f"median {med:g} words, {len(long)} over 24",
+    rules.append(("sentences", 9 <= med <= 16 and not longs, f"median {med:g} words, {len(longs)} over 24",
                   "median 9-16 words (reference 13.5), none over 24"))
 
     dense = [s for s in sents if len(NUMBER.findall(s)) >= 2]

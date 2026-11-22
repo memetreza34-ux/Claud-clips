@@ -1,5 +1,9 @@
 # Claud-Clips
 
+**Start here:** `AGENTS.md` (rules and commands for Claude Code, Codex and Antigravity) and the skill
+`.agents/skills/neuer-clip/SKILL.md`. New clip: `python3 scripts/new_short.py <name>` (`--long` for 16:9 long videos).
+Work on the Mac in `~/claud-clips-work/Claud-clips`; finished results go to the T7 with `python3 scripts/to_t7.py <name>`.
+
 Vertical animated story shorts: 2D characters in a colourful 3D world, rendered with three.js inside Remotion on your own computer. No AI video generator.
 
 Built on the MIT-licensed [claude-animated-shorts](https://github.com/mromidev/claude-animated-shorts), linked as a submodule in `vendor/`.
@@ -45,17 +49,17 @@ Narration and word timings (`--model` takes any whisper.cpp `ggml-*.bin` model):
 
 German shorts use the channel voice: Arman's own voice, cloned with Qwen3-TTS (MLX, Apple Silicon) from
 `voice-ref/meine-stimme.wav` and its transcript `voice-ref/meine-stimme.txt`. The venv and the model (about 2 GB) live on
-the internal SSD in `~/claud-clips-local/`: loaded from the USB T7 (where this project sits) the model stalls for minutes.
-`tts.py` sets `HF_HOME` to `~/claud-clips-local/hf` itself. Setup once:
+the Mac in `~/claud-clips-work/` (`CLIPS_HOME`): loaded from the USB T7 the model stalls for minutes.
+`tts.py` sets `HF_HOME` to `$CLIPS_HOME/hf` itself. Setup once:
 
 ```bash
-python3.12 -m venv ~/claud-clips-local/venv-qwen && ~/claud-clips-local/venv-qwen/bin/pip install mlx-audio soundfile
+python3.12 -m venv ~/claud-clips-work/venv-qwen && ~/claud-clips-work/venv-qwen/bin/pip install mlx-audio soundfile
 ```
 
 Then for every German script:
 
 ```bash
-~/claud-clips-local/venv-qwen/bin/python scripts/tts.py projects/bats/SCRIPT.md projects/bats/voice
+~/claud-clips-work/venv-qwen/bin/python scripts/tts.py projects/bats/SCRIPT.md projects/bats/voice
 ```
 
 Keep Hugging Face models off the exFAT T7: macOS writes `._*` files next to every file there, and they break model loading.

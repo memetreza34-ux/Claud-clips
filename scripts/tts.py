@@ -8,7 +8,7 @@ The reference shorts have almost no dead air (pauses over 0.25 s add up to under
 a line is shortened to --max-pause and each line is trimmed to 20 ms of lead-in and tail.
 Model files are expected in models/kokoro/ and models/piper/.
 A script whose "Format:" line says German/Deutsch is spoken by the channel voice: Arman's own voice, cloned with
-Qwen3-TTS (mlx-audio) from voice-ref/meine-stimme.wav + .txt. Run German scripts with ~/claud-clips-local/venv-qwen/bin/python (internal SSD).
+Qwen3-TTS (mlx-audio) from voice-ref/meine-stimme.wav + .txt. Run German scripts with $CLIPS_HOME/venv-qwen/bin/python (CLIPS_HOME defaults to ~/claud-clips-work, on the Mac).
 Years such as 1943 are written out as words first ("neunzehnhundertdreiundvierzig"). --seed keeps a take reproducible;
 --engine piper falls back to Piper (models/piper/de_DE-thorsten-high).
 """
@@ -113,7 +113,7 @@ def main() -> None:
     german = is_german(args.script)
     if german and args.engine == "qwen":
         # model and venv live on the internal SSD: loading 2 GB from the USB T7 stalls for minutes
-        os.environ.setdefault("HF_HOME", str(Path.home() / "claud-clips-local/hf"))
+        os.environ.setdefault("HF_HOME", str(Path(os.environ.get("CLIPS_HOME", Path.home() / "claud-clips-work")) / "hf"))
         import mlx.core as mx
         from mlx_audio.tts.utils import load_model
         from mlx_audio.utils import load_audio

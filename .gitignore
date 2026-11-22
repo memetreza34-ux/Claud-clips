@@ -22,3 +22,9 @@ voice-ref/*.mp4
 
 # Voice test takes
 projects/*/voice/proben/
+
+# Generated mixes and stems (rebuilt by scripts/mix_audio.py or the clip audio script)
+projects/*/audio/
+
+# Rejected AI-generated plates (the project is built in code now)
+public/*_plates/
